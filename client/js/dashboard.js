@@ -251,7 +251,11 @@ function previewDoc(url, title) {
     if (!modal || !iframe) return window.open(url, "_blank");
 
     modalTitle.textContent = title || "Document Preview";
-    iframe.src = url;
+    
+    // Add token to URL so iframe can pass the auth check
+    const authUrl = `${url}?token=${token}`;
+    iframe.src = authUrl;
+    
     modal.classList.add('active');
 }
 

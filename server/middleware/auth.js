@@ -3,13 +3,18 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
-    const authHeader = req.header('Authorization');
+    let token = req.header('Authorization');
 
-    if (!authHeader) {
-      return res.status(401).json({ error: 'No token provided' });
+    // Check if token is in header or query parameter (for iframes)
+    if (token && token.startsWith('Bearer ')) {
+        token = token.replace('Bearer ', '');
+    } else if (req.query.token) {
+        token = req.query.token;
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretkey"); 
 
