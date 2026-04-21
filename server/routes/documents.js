@@ -3,6 +3,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const path = require('path');
+const https = require('https');
 const auth = require('../middleware/auth');
 const Document = require('../models/Document');
 const router = express.Router();
@@ -92,7 +93,7 @@ router.get('/', auth, async (req, res) => {
   res.json(updatedDocs);
 });
 
-// 🔥 Protected File View (Redirect to Cloudinary)
+// 🔥 Protected File View (Proxy to Cloudinary)
 router.get('/file/:id', auth, async (req, res) => {
   try {
     let query = { _id: req.params.id };
@@ -101,7 +102,19 @@ router.get('/file/:id', auth, async (req, res) => {
     const doc = await Document.findOne(query);
     if (!doc) return res.status(404).json({ error: "File not found" });
 
-    res.redirect(doc.path);
+    // Stream file from Cloudinary instead of redirecting
+    https.get(doc.path, (cloudRes) => {
+      // Copy headers from Cloudinary
+      res.setHeader('Content-Type', cloudRes.headers['content-type'] || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `inline; filename="${doc.originalName}"`);
+      
+      // Pipe the file data to the browser
+      cloudRes.pipe(res);
+    }).on('error', (err) => {
+      console.error("❌ Proxy Error:", err.message);
+      res.status(500).json({ error: "Failed to stream file" });
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
