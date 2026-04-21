@@ -23,10 +23,7 @@ if (!mongoURI || mongoURI.includes("<password>")) {
   console.error("❌ ERROR: MONGO_URI is missing or still contains '<password>' placeholder!");
 }
 
-mongoose.connect(mongoURI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(mongoURI)
   .then(() => console.log("MongoDB connected successfully ✅"))
   .catch(err => {
     console.error("MongoDB connection error ❌:");
