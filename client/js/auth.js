@@ -1,6 +1,6 @@
 class AuthHandler {
     constructor() {
-        this.API_URL = 'http://localhost:5000/api';
+        this.API_URL = '/api';
         this.init();
     }
 
@@ -41,8 +41,8 @@ class AuthHandler {
 
         // PASSWORD (fix 🔥)
         if (input.id.toLowerCase().includes('password')) {
-            if (!value || value.length < 6) {
-                errorMsg = 'Password must be at least 6 characters';
+            if (!value || value.length < 8) {
+                errorMsg = 'Password must be at least 8 characters';
             }
         }
 

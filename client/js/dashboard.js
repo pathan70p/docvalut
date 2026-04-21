@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "/api";
 
 // 🔐 Check login
 const token = localStorage.getItem('token');
@@ -10,13 +10,14 @@ if (!token) {
 const user = JSON.parse(localStorage.getItem('user'));
 
 if (user) {
-    document.getElementById('username-display').textContent = user.username;
-
-    if (user.role === "admin") {
-        document.getElementById('username-display').innerHTML += 
-            ' <span style="color:red; font-size:12px;">(Admin)</span>';
-
-        document.getElementById("admin-panel").style.display = "block";
+    const usernameDisplay = document.getElementById('username-display');
+    if (usernameDisplay) {
+        usernameDisplay.textContent = user.username;
+        if (user.role === "admin") {
+            usernameDisplay.innerHTML += ' <span style="color:red; font-size:12px;">(Admin)</span>';
+            const adminPanel = document.getElementById("admin-panel");
+            if (adminPanel) adminPanel.style.display = "block";
+        }
     }
 }
 
@@ -25,54 +26,59 @@ const fileInput = document.getElementById('document-file');
 const fileName = document.getElementById('file-name');
 const titleInput = document.getElementById("doc-title");
 
-// 📂 File name show
-fileInput.addEventListener('change', () => {
-    fileName.textContent = fileInput.files[0]?.name || "";
-});
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        fileName.textContent = fileInput.files[0]?.name || "";
+    });
+}
 
 // 📤 Upload
-document.getElementById('upload-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+const uploadForm = document.getElementById('upload-form');
+if (uploadForm) {
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    const file = fileInput.files[0];
-    const title = titleInput.value.trim();
+        const file = fileInput.files[0];
+        const title = titleInput.value.trim();
+        const expiry = document.getElementById('link-expiry').value;
 
-    if (!file || !title) return alert("File & title required ❌");
+        if (!file || !title) return alert("File & title required ❌");
 
-    const formData = new FormData();
-    formData.append("document", file);
-    formData.append("title", title);
+        const formData = new FormData();
+        formData.append("document", file);
+        formData.append("title", title);
+        formData.append("expiry", expiry);
 
-    try {
-        const res = await fetch(`${API_URL}/documents/upload`, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            body: formData
-        });
+        try {
+            const res = await fetch(`${API_URL}/documents/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
 
-        alert("Uploaded ✅");
+            alert("Uploaded ✅");
 
-        fileInput.value = "";
-        titleInput.value = "";
-        fileName.textContent = "";
+            fileInput.value = "";
+            titleInput.value = "";
+            fileName.textContent = "";
 
-        loadDocuments();
+            loadDocuments();
 
-    } catch (err) {
-        alert(err.message);
-    }
-});
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+}
+
 let usersVisible = false;
-
 function toggleUsers() {
-    console.log("Button clicked"); // 🔥 debug
-
     const container = document.getElementById("user-list");
+    if (!container) return;
 
     if (usersVisible) {
         container.style.display = "none";
@@ -81,10 +87,10 @@ function toggleUsers() {
     } else {
         container.style.display = "block";
         usersVisible = true;
-
         loadUsers();
     }
 }
+
 // 📥 Load Documents
 async function loadDocuments() {
     try {
@@ -96,59 +102,41 @@ async function loadDocuments() {
 
         const data = await res.json();
 
-        // 🔥 ERROR HANDLE
         if (!Array.isArray(data)) {
             console.error("Docs error:", data);
-            alert(data.error || "Unauthorized ❌");
             return;
         }
 
         const search = document.getElementById("search")?.value.toLowerCase() || "";
-
         const filteredDocs = data.filter(doc =>
             (doc.title || doc.originalName).toLowerCase().includes(search)
         );
 
         document.getElementById('total-docs').textContent = data.length;
-
         const container = document.getElementById('documents-grid');
 
         if (!filteredDocs.length) {
-            container.innerHTML = "<p>No documents found</p>";
+            container.innerHTML = '<div class="empty-state"><h3>No documents found</h3></div>';
             return;
         }
 
         container.innerHTML = filteredDocs.map(doc => {
             const date = new Date(doc.createdAt);
-
+            // Fallback for missing shareToken
+            const displayToken = doc.shareToken || "no-token";
+            
             return `
                 <div class="doc-card">
-
-                    <input type="checkbox" class="doc-checkbox" value="${doc.fileUrl}">
-
+                    <input type="checkbox" class="doc-checkbox" data-token="${displayToken}" value="${doc.fileUrl}">
                     <div class="doc-info">
                         <h4>${doc.title || doc.originalName}</h4>
                         <small>${date.toLocaleDateString()} | ${date.toLocaleTimeString()}</small>
                     </div>
-
                     <div class="doc-actions">
-
-                        <button onclick='previewDoc("${doc.fileUrl}")'>
-                            👁️
-                        </button>
-
-                        <button onclick="editDoc('${doc._id}', '${doc.title || doc.originalName}')">
-                            ✏️
-                        </button>
-
-                        <button onclick='shareDoc(${JSON.stringify(doc)})'>
-                            🔗
-                        </button>
-
-                        <button onclick="deleteDoc('${doc._id}')">
-                            🗑️
-                        </button>
-
+                        <button onclick='previewDoc("${doc.fileUrl}")' title="Preview">👁️</button>
+                        <button onclick="editDoc('${doc._id}', '${doc.title || doc.originalName}')" title="Edit Name">✏️</button>
+                        <button onclick='shareDoc(${JSON.stringify(doc)})' title="Copy Share Link">🔗</button>
+                        <button onclick="deleteDoc('${doc._id}')" title="Delete">🗑️</button>
                     </div>
                 </div>
             `;
@@ -169,69 +157,67 @@ async function loadUsers() {
         });
 
         const data = await res.json();
-
-        if (!Array.isArray(data)) {
-            alert(data.error || "Unauthorized ❌");
-            return;
-        }
+        if (!Array.isArray(data)) return alert(data.error || "Unauthorized ❌");
 
         const container = document.getElementById("user-list");
+        container.innerHTML = data.map(user => {
+            const history = user.loginHistory?.map(h => {
+                const login = h.loginTime ? new Date(h.loginTime).toLocaleString("en-IN") : "N/A";
+                const logout = h.logoutTime ? new Date(h.logoutTime).toLocaleString("en-IN") : "Active";
+                return `<div style="font-size:12px; color:#555;">🟢 Login: ${login}<br>🔴 Logout: ${logout}</div>`;
+            }).join('') || "No history";
 
-       container.innerHTML = data.map(user => {
-
-    const history = user.loginHistory?.map(h => {
-
-        const login = h.loginTime 
-            ? new Date(h.loginTime).toLocaleString("en-IN")
-            : "N/A";
-
-        const logout = h.logoutTime 
-            ? new Date(h.logoutTime).toLocaleString("en-IN")
-            : "Active";
-
-        return `
-            <div style="font-size:12px; color:#555;">
-                🟢 Login: ${login}<br>
-                🔴 Logout: ${logout}
-            </div>
-        `;
-    }).join('') || "No history";
-
-    return `
-        <div class="user-card">
-            <div>
-                <strong>${user.username} (${user.role})</strong><br>
-                ${user.email}
-                ${history}
-            </div>
-        </div>
-    `;
-}).join('');
-
+            return `
+                <div class="user-card">
+                    <div>
+                        <strong>${user.username} (${user.role})</strong><br>
+                        ${user.email}
+                        ${history}
+                    </div>
+                </div>
+            `;
+        }).join('');
     } catch (err) {
         console.error(err);
     }
 }
+
+// 🔗 Share Selected
+function shareSelected() {
+    const selected = document.querySelectorAll('.doc-checkbox:checked');
+    if (selected.length === 0) return alert("Select documents to share ❌");
+
+    const links = Array.from(selected).map(cb => {
+        const token = cb.getAttribute('data-token');
+        return token ? `${window.location.origin}/api/auth/public/${token}` : null;
+    }).filter(link => link !== null);
+
+    if (links.length === 0) return alert("No shareable links found ❌");
+
+    navigator.clipboard.writeText(links.join('\n'));
+    alert(`${links.length} Links copied to clipboard ✅`);
+}
+
+// 🚪 Logout
 async function logout() {
     try {
         await fetch(`${API_URL}/auth/logout`, {
             method: "POST",
             headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                'Authorization': 'Bearer ' + token
             }
         });
     } catch (err) {
-        console.log(err);
+        console.error("Logout error:", err);
     }
-
     localStorage.clear();
     window.location.href = 'login.html';
 }
-// 🔗 Share
+
+// 🔗 Share Individual
 function shareDoc(doc) {
     if (!doc.shareToken) return alert("No share link ❌");
-
-    const link = `${API_URL}/documents/public/${doc.shareToken}`;
+    const link = `${window.location.origin}/api/auth/public/${doc.shareToken}`;
     navigator.clipboard.writeText(link);
     alert("Link copied ✅");
 }
@@ -242,9 +228,9 @@ function previewDoc(url) {
 }
 
 // ✏️ Edit
-async function editDoc(id, oldName) {
-    const newName = prompt("Enter new name:", oldName);
-    if (!newName) return;
+async function editDoc(id, oldTitle) {
+    const newTitle = prompt("Enter new document title:", oldTitle);
+    if (!newTitle || newTitle === oldTitle) return;
 
     try {
         const res = await fetch(`${API_URL}/documents/${id}`, {
@@ -253,7 +239,7 @@ async function editDoc(id, oldName) {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + token
             },
-            body: JSON.stringify({ originalName: newName })
+            body: JSON.stringify({ title: newTitle })
         });
 
         const data = await res.json();
@@ -261,7 +247,6 @@ async function editDoc(id, oldName) {
 
         alert("Updated ✅");
         loadDocuments();
-
     } catch (err) {
         alert(err.message);
     }
@@ -284,7 +269,6 @@ async function deleteDoc(id) {
 
         alert("Deleted ✅");
         loadDocuments();
-
     } catch (err) {
         alert(err.message);
     }
@@ -296,11 +280,5 @@ function selectAll(source) {
         .forEach(cb => cb.checked = source.checked);
 }
 
-// 🚪 Logout
-function logout() {
-    localStorage.clear();
-    window.location.href = 'login.html';
-}
-
-// 🔄 Load
+// 🔄 Initial Load
 loadDocuments();

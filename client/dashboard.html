@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - DocVault</title>
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📂</text></svg>">
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -30,10 +30,8 @@
     <h3>Admin Panel</h3>
     <button onclick="toggleUsers()">View All Users</button>
 
-      <div id="user-list" style="display:none;"></div>
-
     <!-- 🔥 USER LIST -->
-    <div id="user-list"></div>
+    <div id="user-list" style="display:none;"></div>
 </div>
 
     <!-- DASHBOARD -->
@@ -48,6 +46,17 @@
 
                 <!-- 🔥 TITLE INPUT -->
                 <input type="text" id="doc-title" placeholder="Enter document title" required>
+
+                <!-- 🔥 EXPIRATION SELECT -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 14px; color: #666;">Link Expiry:</label>
+                    <select id="link-expiry" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                        <option value="permanent">Permanent</option>
+                        <option value="1h">1 Hour</option>
+                        <option value="1d">1 Day</option>
+                        <option value="7d">7 Days</option>
+                    </select>
+                </div>
 
                 <div class="file-upload-wrapper">
                     <input type="file" id="document-file" name="document"

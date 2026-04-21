@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: docvault-live
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    staticPublishNum: 0
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: MONGO_URI
+        sync: false
+        placeholder: "Paste your MongoDB Atlas URI here"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
