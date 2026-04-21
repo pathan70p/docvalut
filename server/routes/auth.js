@@ -1,0 +1,155 @@
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const path = require('path');
+
+const User = require('../models/User');
+const Document = require('../models/Document');
+const auth = require('../middleware/auth'); // 🔥 for protected routes
+
+const router = express.Router();
+
+
+// =====================
+// 🔥 REGISTER
+// =====================
+router.post('/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // check existing user
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    // create user
+    const user = new User({
+      username,
+      email,
+      password
+    });
+
+    await user.save();
+
+    res.json({ message: 'User registered successfully' });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// =====================
+// 🔥 LOGIN
+// =====================
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+
+    // 🔥 LOGIN TRACK
+    user.loginHistory.push({
+      loginTime: new Date()
+    });
+
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role || "user" },
+      process.env.JWT_SECRET || "secretkey",
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role || "user"
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+router.post('/logout', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    // 🔥 LAST LOGIN ENTRY
+    const last = user.loginHistory[user.loginHistory.length - 1];
+
+    if (last && !last.logoutTime) {
+      last.logoutTime = new Date();
+    }
+
+    await user.save();
+
+    res.json({ message: "Logout saved" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =====================
+// 🔥 GET ALL USERS (ADMIN ONLY)
+// =====================
+router.get('/users', auth, async (req, res) => {
+  try {
+    // admin check
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const users = await User.find().select('-password');
+
+    res.json(users);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+const crypto = require('crypto');
+
+// =====================
+// 🔥 PUBLIC FILE VIEW (SHARE LINK)
+// =====================
+router.get('/public/:token', async (req, res) => {
+  try {
+    // Try to find by token
+    let doc = await Document.findOne({ shareToken: req.params.token });
+
+    // Fallback: If token looks like a file path or is invalid, 
+    // we should have handled it in the frontend, but let's be safe.
+    if (!doc) {
+      return res.status(404).send("<h1>Link Invalid ❌</h1><p>File not found or link is invalid.</p>");
+    }
+
+    // 🔥 Check Expiration
+    if (doc.shareExpiresAt && new Date() > doc.shareExpiresAt) {
+      return res.status(410).send("<h1>Link Expired ❌</h1><p>This share link is no longer valid.</p>");
+    }
+
+    res.redirect(doc.path);
+
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+
+module.exports = router;
