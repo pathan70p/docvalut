@@ -130,7 +130,6 @@ async function loadDocuments() {
 
         container.innerHTML = filteredDocs.map(doc => {
             const date = new Date(doc.createdAt);
-            // Fallback for missing shareToken
             const displayToken = doc.shareToken || "no-token";
             
             return `
@@ -142,8 +141,8 @@ async function loadDocuments() {
                     </div>
                     <div class="doc-actions">
                         <button onclick='previewDoc("${doc.fileUrl}")' title="Preview">👁️</button>
-                        <button onclick="editDoc('${doc._id}', '${doc.title || doc.originalName}')" title="Edit Name">✏️</button>
-                        <button onclick='shareDoc(${JSON.stringify(doc)})' title="Copy Share Link">🔗</button>
+                        <button onclick="editDoc('${doc._id}', '${(doc.title || doc.originalName).replace(/'/g, "\\'")}')" title="Edit Name">✏️</button>
+                        <button onclick="shareDoc('${displayToken}')" title="Copy Share Link">🔗</button>
                         <button onclick="deleteDoc('${doc._id}')" title="Delete">🗑️</button>
                     </div>
                 </div>
@@ -195,15 +194,20 @@ function shareSelected() {
     const selected = document.querySelectorAll('.doc-checkbox:checked');
     if (selected.length === 0) return alert("Select documents to share ❌");
 
+    const base = window.location.origin.replace(/\/$/, "");
     const links = Array.from(selected).map(cb => {
         const token = cb.getAttribute('data-token');
-        return token ? `${window.location.origin}/api/auth/public/${token}` : null;
+        return (token && token !== "no-token") ? `${base}/api/auth/public/${token}` : null;
     }).filter(link => link !== null);
 
     if (links.length === 0) return alert("No shareable links found ❌");
 
-    navigator.clipboard.writeText(links.join('\n'));
-    alert(`${links.length} Links copied to clipboard ✅`);
+    const text = links.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        alert(`${links.length} Links copied to clipboard ✅`);
+    }).catch(err => {
+        prompt("Copy links from here:", text);
+    });
 }
 
 // 🚪 Logout
@@ -223,11 +227,19 @@ async function logout() {
 }
 
 // 🔗 Share Individual
-function shareDoc(doc) {
-    if (!doc.shareToken) return alert("No share link ❌");
-    const link = `${window.location.origin}/api/auth/public/${doc.shareToken}`;
-    navigator.clipboard.writeText(link);
-    alert("Link copied ✅");
+function shareDoc(token) {
+    if (!token || token === "no-token") return alert("No share link ❌");
+    
+    const base = window.location.origin.replace(/\/$/, "");
+    const link = `${base}/api/auth/public/${token}`;
+    
+    console.log("📢 Generated Link:", link);
+    
+    navigator.clipboard.writeText(link).then(() => {
+        alert("Link copied ✅");
+    }).catch(err => {
+        prompt("Copy this link:", link);
+    });
 }
 
 // 👁️ Preview

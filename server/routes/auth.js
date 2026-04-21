@@ -130,23 +130,36 @@ const crypto = require('crypto');
 // =====================
 router.get('/public/:token', async (req, res) => {
   try {
+    console.log("📢 Public link accessed with token:", req.params.token);
+    
     // Try to find by token
     let doc = await Document.findOne({ shareToken: req.params.token });
 
-    // Fallback: If token looks like a file path or is invalid, 
-    // we should have handled it in the frontend, but let's be safe.
     if (!doc) {
+      console.error("❌ Invalid token:", req.params.token);
       return res.status(404).send("<h1>Link Invalid ❌</h1><p>File not found or link is invalid.</p>");
     }
 
     // 🔥 Check Expiration
     if (doc.shareExpiresAt && new Date() > doc.shareExpiresAt) {
+      console.warn("⚠️ Link expired for doc:", doc.title);
       return res.status(410).send("<h1>Link Expired ❌</h1><p>This share link is no longer valid.</p>");
     }
 
-    res.redirect(doc.path);
+    // Handle both Cloudinary (https://) and Local paths
+    let finalPath = doc.path;
+    if (finalPath && !finalPath.startsWith('http')) {
+        // Agar local path hai, toh use full URL mein badlein
+        const protocol = req.protocol;
+        const host = req.get('host');
+        finalPath = `${protocol}://${host}/${doc.path}`;
+    }
+
+    console.log("🚀 Redirecting to:", finalPath);
+    res.redirect(finalPath);
 
   } catch (err) {
+    console.error("❌ Public redirect error:", err.message);
     res.status(500).send(err.message);
   }
 });
