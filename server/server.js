@@ -17,20 +17,25 @@ app.use(express.static(path.join(__dirname, "../client")));
 // =====================
 // 🔥 MongoDB Connection
 // =====================
-let mongoURI = process.env.MONGO_URI;
+const mongoURI = process.env.MONGO_URI;
 
-// Agar URI ke aakhir mein database name nahi hai, toh add kar dete hain
-if (mongoURI && !mongoURI.includes(".net/") && !mongoURI.includes("?")) {
-    mongoURI = mongoURI.split('?')[0] + "/docvault?" + mongoURI.split('?')[1];
+if (!mongoURI) {
+  console.error("❌ ERROR: MONGO_URI is completely empty in Render settings!");
+} else {
+  // Mask password for safety in logs
+  const maskedURI = mongoURI.replace(/:([^:@]+)@/, ":****@");
+  console.log("Attempting to connect to:", maskedURI);
 }
 
 mongoose.connect(mongoURI)
   .then(() => console.log("MongoDB connected successfully ✅"))
   .catch(err => {
     console.error("MongoDB connection error ❌:");
-    console.error("Message:", err.message);
-    if (err.message.includes("authentication failed")) {
-      console.error("👉 Solution: Your Username or Password in Render Environment Variables is wrong.");
+    console.error("Error Name:", err.name);
+    console.error("Error Message:", err.message);
+    
+    if (err.message.includes("hostname, domain name, and tld")) {
+      console.error("👉 Solution: Your link is broken. Make sure it has '@cluster0...' part correctly.");
     }
   });
 
