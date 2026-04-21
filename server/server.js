@@ -17,9 +17,24 @@ app.use(express.static(path.join(__dirname, "../client")));
 // =====================
 // 🔥 MongoDB Connection
 // =====================
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected ✅"))
-  .catch(err => console.error("MongoDB error ❌:", err));
+const mongoURI = process.env.MONGO_URI;
+
+if (!mongoURI || mongoURI.includes("<password>")) {
+  console.error("❌ ERROR: MONGO_URI is missing or still contains '<password>' placeholder!");
+}
+
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log("MongoDB connected successfully ✅"))
+  .catch(err => {
+    console.error("MongoDB connection error ❌:");
+    console.error("Message:", err.message);
+    if (err.message.includes("authentication failed")) {
+      console.error("👉 Solution: Your Username or Password in Render Environment Variables is wrong.");
+    }
+  });
 
 // =====================
 // 🔥 Routes
