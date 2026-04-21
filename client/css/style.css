@@ -551,10 +551,19 @@ body {
     margin: 20px;
     border-radius: 12px;
     width: 90%;
-    max-width: 900px;
-    max-height: 90vh;
+    max-width: 1000px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     animation: slideUp 0.3s ease;
+}
+
+#document-preview {
+    width: 100%;
+    flex-grow: 1;
+    border: none;
+    background: #f1f1f1;
 }
 
 .modal-header {

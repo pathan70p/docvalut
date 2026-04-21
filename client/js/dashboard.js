@@ -140,7 +140,7 @@ async function loadDocuments() {
                         <small>${date.toLocaleDateString()} | ${date.toLocaleTimeString()}</small>
                     </div>
                     <div class="doc-actions">
-                        <button onclick='previewDoc("${doc.fileUrl}")' title="Preview">👁️</button>
+                        <button onclick='previewDoc("${doc.fileUrl}", "${(doc.title || doc.originalName).replace(/'/g, "\\'")}")' title="Preview">👁️</button>
                         <button onclick="editDoc('${doc._id}', '${(doc.title || doc.originalName).replace(/'/g, "\\'")}')" title="Edit Name">✏️</button>
                         <button onclick="shareDoc('${displayToken}')" title="Copy Share Link">🔗</button>
                         <button onclick="deleteDoc('${doc._id}')" title="Delete">🗑️</button>
@@ -243,8 +243,24 @@ function shareDoc(token) {
 }
 
 // 👁️ Preview
-function previewDoc(url) {
-    window.open(url, "_blank");
+function previewDoc(url, title) {
+    const modal = document.getElementById('preview-modal');
+    const iframe = document.getElementById('document-preview');
+    const modalTitle = document.getElementById('modal-title');
+    
+    if (!modal || !iframe) return window.open(url, "_blank");
+
+    modalTitle.textContent = title || "Document Preview";
+    iframe.src = url;
+    modal.classList.add('active');
+}
+
+function closePreview() {
+    const modal = document.getElementById('preview-modal');
+    const iframe = document.getElementById('document-preview');
+    
+    if (modal) modal.classList.remove('active');
+    if (iframe) iframe.src = ""; // Stop loading/playing
 }
 
 // ✏️ Edit
