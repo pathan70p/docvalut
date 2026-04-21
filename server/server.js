@@ -17,10 +17,11 @@ app.use(express.static(path.join(__dirname, "../client")));
 // =====================
 // 🔥 MongoDB Connection
 // =====================
-const mongoURI = process.env.MONGO_URI;
+let mongoURI = process.env.MONGO_URI;
 
-if (!mongoURI || mongoURI.includes("<password>")) {
-  console.error("❌ ERROR: MONGO_URI is missing or still contains '<password>' placeholder!");
+// Agar URI ke aakhir mein database name nahi hai, toh add kar dete hain
+if (mongoURI && !mongoURI.includes(".net/") && !mongoURI.includes("?")) {
+    mongoURI = mongoURI.split('?')[0] + "/docvault?" + mongoURI.split('?')[1];
 }
 
 mongoose.connect(mongoURI)
