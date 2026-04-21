@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - DocVault</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-folder-open"></i>
+                <span>DocVault</span>
+            </div>
+
+            <div class="nav-user">
+                <span id="username-display"></span>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+     <div id="admin-panel" style="display:none;">
+    <h3>Admin Panel</h3>
+    <button onclick="toggleUsers()">View All Users</button>
+
+      <div id="user-list" style="display:none;"></div>
+
+    <!-- 🔥 USER LIST -->
+    <div id="user-list"></div>
+</div>
+
+    <!-- DASHBOARD -->
+    <div class="dashboard-container">
+        
+
+        <!-- UPLOAD SECTION -->
+        <div class="upload-section">
+            <h2><i class="fas fa-cloud-upload-alt"></i> Upload Document</h2>
+
+            <form id="upload-form" enctype="multipart/form-data">
+
+                <!-- 🔥 TITLE INPUT -->
+                <input type="text" id="doc-title" placeholder="Enter document title" required>
+
+                <div class="file-upload-wrapper">
+                    <input type="file" id="document-file" name="document"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif" required>
+
+                    <label for="document-file" class="file-upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Choose File</span>
+                        <span id="file-name"></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </form>
+        </div>
+
+        <!-- DOCUMENTS SECTION -->
+        <div class="documents-section">
+
+            <div class="section-header">
+                <h2><i class="fas fa-folder"></i> My Documents</h2>
+                
+                <div class="stats">
+                    <span id="total-docs">0</span> documents
+                </div>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                  <input type="text" id="search" placeholder="Search documents..." onkeyup="loadDocuments()">
+            </div>
+
+            <!-- 🔥 ACTION BAR -->
+            <div class="bulk-actions">
+                <label>
+                    <input type="checkbox" onclick="selectAll(this)">
+                    Select All
+                </label>
+
+                <button onclick="shareSelected()" class="btn-share-all">
+                    <i class="fas fa-share"></i> Share Selected
+                </button>
+            </div>
+
+            <!-- DOCUMENT LIST -->
+            <div class="documents-grid" id="documents-grid">
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No documents yet</h3>
+                    <p>Upload your first document to get started</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PREVIEW MODAL -->
+    <div class="modal" id="preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title"></h3>
+                <button class="close-modal" onclick="closePreview()">&times;</button>
+            </div>
+            <iframe id="document-preview"></iframe>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

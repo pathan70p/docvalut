@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - DocVault</title>
+    <link rel="stylesheet" href="css/login.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Side - Branding -->
+        <div class="login-left">
+            <div class="brand">
+                <i class="fas fa-vault brand-icon"></i>
+                <h1>Doc<span class="gradient-text">Vault</span></h1>
+                <p>Join thousands of users securing their documents</p>
+            </div>
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-file-upload"></i>
+                    <span>Easy File Upload</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-search"></i>
+                    <span>Quick Search</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-download"></i>
+                    <span>Instant Download</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Register Form -->
+        <div class="login-right">
+            <div class="login-card">
+                <div class="card-header">
+                    <h2>Create Account</h2>
+                    <p>Get started with DocVault today</p>
+                </div>
+
+                <form id="registerForm" class="login-form">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="regUsername" placeholder="Username" required>
+                            <span class="error-message" id="usernameError"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="regEmail" placeholder="Email address" required>
+                        <span class="error-message" id="emailError"></span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="regPassword" placeholder="Password (min 8 chars)" required>
+                        <span class="error-message" id="passwordError"></span>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
+                        <span class="error-message" id="confirmPasswordError"></span>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="terms" required>
+                            <span class="checkmark"></span>
+                            I agree to Terms & Conditions
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-large">
+                        <i class="fas fa-user-plus"></i>
+                        Create Account
+                    </button>
+
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+
+                    <p class="signup-link">
+                        Already have an account? 
+                        <a href="login.html">Sign in here</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>
