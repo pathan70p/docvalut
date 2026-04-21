@@ -96,11 +96,18 @@ function previewDoc(url, title) {
     const iframe = document.getElementById('document-preview');
     const modalTitle = document.getElementById('modal-title');
     
-    // Convert Cloudinary http to https for iframe safety
-    const secureUrl = url.replace('http://', 'https://');
-    
     modalTitle.textContent = title || "Preview";
-    iframe.src = secureUrl;
+    
+    // Ensure URL is secure
+    let secureUrl = url.replace('http://', 'https://');
+
+    // 🔥 PDF Fix: Use Google Docs Viewer for reliable loading
+    if (secureUrl.toLowerCase().endsWith('.pdf')) {
+        iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(secureUrl)}&embedded=true`;
+    } else {
+        iframe.src = secureUrl;
+    }
+    
     modal.classList.add('active');
 }
 
