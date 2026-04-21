@@ -26,11 +26,21 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 const crypto = require("crypto");
 
-router.post('/upload', auth, upload.single('document'), async (req, res) => {
+router.post('/upload', auth, (req, res, next) => {
+  upload.single('document')(req, res, (err) => {
+    if (err) {
+      console.error("❌ Multer/Cloudinary Error:", err.message);
+      return res.status(500).json({ error: "Upload failed: " + err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    console.log("✅ File received by Multer, saving to DB...");
 
     let expiryDate = null;
     const expiryType = req.body.expiry;
@@ -45,14 +55,15 @@ router.post('/upload', auth, upload.single('document'), async (req, res) => {
     const newDoc = new Document({
       userId: req.user._id,
       originalName: req.file.originalname,
-      title: req.body.title,
-      path: req.file.path, // 🔥 Ab ye Cloudinary ka URL store karega
+      title: req.body.title || req.file.originalname,
+      path: req.file.path, 
       shareToken: crypto.randomBytes(16).toString("hex"),
       shareExpiresAt: expiryDate,
       createdAt: new Date()
     });
 
     await newDoc.save();
+    console.log("✅ Document saved to DB successfully");
 
     res.json({
       ...newDoc._doc,
@@ -60,6 +71,7 @@ router.post('/upload', auth, upload.single('document'), async (req, res) => {
     });
 
   } catch (error) {
+    console.error("❌ Database Save Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
