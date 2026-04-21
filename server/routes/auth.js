@@ -1,6 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const User = require('../models/User');
 const Document = require('../models/Document');
@@ -146,17 +148,33 @@ router.get('/public/:token', async (req, res) => {
       return res.status(410).send("<h1>Link Expired ❌</h1><p>This share link is no longer valid.</p>");
     }
 
-    // Handle both Cloudinary (https://) and Local paths
-    let finalPath = doc.path;
-    if (finalPath && !finalPath.startsWith('http')) {
-        // Agar local path hai, toh use full URL mein badlein
-        const protocol = req.protocol;
-        const host = req.get('host');
-        finalPath = `${protocol}://${host}/${doc.path}`;
+    if (!doc.path) {
+        return res.status(404).send("File path missing");
     }
 
-    console.log("🚀 Redirecting to:", finalPath);
-    res.redirect(finalPath);
+    // Proxy the file instead of redirecting
+    const client = doc.path.startsWith('https') ? https : http;
+
+    console.log("🚀 Proxying public file from:", doc.path);
+
+    client.get(doc.path, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+    }, (cloudRes) => {
+      if (cloudRes.statusCode !== 200) {
+        console.error(`❌ Cloudinary source error: ${cloudRes.statusCode}`);
+        return res.status(cloudRes.statusCode).send("File could not be retrieved from source.");
+      }
+
+      // Copy headers
+      res.setHeader('Content-Type', cloudRes.headers['content-type'] || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName || 'file')}"`);
+      
+      // Pipe data to browser
+      cloudRes.pipe(res);
+    }).on('error', (err) => {
+      console.error("❌ Proxy Error:", err.message);
+      res.status(500).send("Failed to stream file: " + err.message);
+    });
 
   } catch (err) {
     console.error("❌ Public redirect error:", err.message);
