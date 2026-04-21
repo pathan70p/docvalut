@@ -58,8 +58,16 @@ if (uploadForm) {
                 body: formData
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            let data;
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                throw new Error("Server Error: " + res.status);
+            }
+
+            if (!res.ok) throw new Error(data.error || "Upload failed");
 
             alert("Uploaded ✅");
 
