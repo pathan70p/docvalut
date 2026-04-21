@@ -3,8 +3,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const path = require('path');
-const https = require('https');
-const http = require('http');
+const axios = require('axios');
 const auth = require('../middleware/auth');
 const Document = require('../models/Document');
 const router = express.Router();
@@ -103,31 +102,23 @@ router.get('/file/:id', auth, async (req, res) => {
     const doc = await Document.findOne(query);
     if (!doc) return res.status(404).json({ error: "File not found" });
 
-    // Stream file from Cloudinary instead of redirecting
-    // Dynamic protocol check (http vs https)
-    const client = doc.path.startsWith('https') ? https : http;
+    console.log("📢 Proxying file with Axios for:", doc.title);
 
-    client.get(doc.path, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-    }, (cloudRes) => {
-      if (cloudRes.statusCode !== 200) {
-        console.error(`❌ Cloudinary source error: ${cloudRes.statusCode}`);
-        return res.status(cloudRes.statusCode).send("Could not retrieve file from source.");
-      }
-
-      // Copy headers from Cloudinary
-      res.setHeader('Content-Type', cloudRes.headers['content-type'] || 'application/octet-stream');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName)}"`);
-
-      // Pipe the file data to the browser
-      cloudRes.pipe(res);
-    }).on('error', (err) => {
-      console.error("❌ Proxy Error:", err.message);
-      res.status(500).json({ error: "Failed to stream file" });
+    const response = await axios({
+      method: 'get',
+      url: doc.path,
+      responseType: 'stream',
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName)}"`);
+    
+    response.data.pipe(res);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ Axios Proxy Error:", err.message);
+    res.status(500).json({ error: "Failed to stream file from source" });
   }
 });
 
@@ -161,7 +152,6 @@ router.delete('/:id', auth, async (req, res) => {
     if (!document) return res.status(404).json({ error: 'Not found' });
 
     // Extract Public ID from Cloudinary URL to delete it
-    // URL format: .../upload/v12345/folder/public_id.ext
     try {
       const urlParts = document.path.split('/');
       const fileNameWithExt = urlParts[urlParts.length - 1];
@@ -172,7 +162,6 @@ router.delete('/:id', auth, async (req, res) => {
       await cloudinary.uploader.destroy(fullPublicId);
     } catch (cloudErr) {
       console.error("Cloudinary delete failed:", cloudErr.message);
-      // We continue to delete from DB even if cloud delete fails
     }
 
     await Document.findByIdAndDelete(req.params.id);
